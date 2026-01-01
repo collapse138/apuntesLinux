@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# 1. Limpieza de reglas previas
+iptables -F
+iptables -X
+iptables -Z
+iptables -t nat -F
+
+# 2. Establecer política por defecto (Denegar todo)
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+# 3. Permitir tráfico en la interfaz de bucle local (Loopback)
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+
+# 4. Permitir PING (ICMP)
+# Salida
+iptables -A OUTPUT -o enp0s3 -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A INPUT -i enp0s3 -p icmp --icmp-type echo-reply -j ACCEPT
+# Entrada (opcional, para que otros te hagan ping)
+# iptables -A INPUT -i enp0s3 -p icmp --icmp-type echo-request -j ACCEPT
+# iptables -A OUTPUT -o enp0s3 -p icmp --icmp-type echo-reply -j ACCEPT
+
+# 5. Permitir consultas DNS (Puerto 53 UDP/TCP)
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -p udp --sport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+iptables -A INPUT -p tcp --sport 53 -j ACCEPT
+
+# 6. Permitir navegación WEB (HTTP puerto 80 y HTTPS puerto 443)
+# HTTP
+iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --sport 80 -j ACCEPT
+# HTTPS
+iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -p tcp --sport 443 -j ACCEPT
